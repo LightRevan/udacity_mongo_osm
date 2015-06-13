@@ -81,6 +81,12 @@ if __name__ == '__main__':
         handler = OSMHandler(fname, db.meta)
         sax.parse(f, handler)
 
+    # defaultdict(<type 'set'>, {u'node': set([u'changeset', u'uid', u'timestamp', u'lon', u'version', u'user', u'lat', u'id']),
+    #                            u'tag': set([u'k', u'v']),
+    #                            u'nd': set([u'ref']),
+    #                            u'way': set([u'changeset', u'uid', u'timestamp', u'version', u'user', u'id'])})
+    # defaultdict(<type 'set'>, {u'node': set([u'tag']), u'way': set([u'tag', u'nd'])})
+
     print handler.attribute_dict
     print handler.subelements
     print db.meta.count()
