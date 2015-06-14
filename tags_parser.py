@@ -6,7 +6,7 @@ import collections
 from dbconnection import *
 
 
-class OSMHandler(sax.ContentHandler):
+class OSMTagHandler(sax.ContentHandler):
     def __init__(self, fname, db):
         sax.ContentHandler.__init__(self)
 
@@ -25,7 +25,6 @@ class OSMHandler(sax.ContentHandler):
         doc = self.db.find_one(query)
         is_changed = False
         if not doc:
-            is_changed = True
             doc = {'file': self.fname, 'element': elem, 'tag': {'name': parts[0], 'count': 0, 'examples': [v]}}
 
         cur_tag = doc['tag']
@@ -44,14 +43,12 @@ class OSMHandler(sax.ContentHandler):
             else:
                 cur_tag = {'name': tag_part, 'count': 1, 'examples': []}
                 subtags.append(cur_tag)
-                is_changed = True
 
-        if is_changed:
-            examples = cur_tag['examples']
-            if len(examples) < 11 and v not in examples:
-                examples.append(v)
+        examples = cur_tag['examples']
+        if len(examples) < 11 and v not in examples:
+            examples.append(v)
 
-            res = self.db.replace_one(query, doc, upsert=True)
+        res = self.db.replace_one(query, doc, upsert=True)
 
     def startElement(self, name, attrs):
         if name not in self.interesting_elements:
@@ -78,7 +75,7 @@ if __name__ == '__main__':
 
     tags = set()
     with open(fname, 'r') as f:
-        handler = OSMHandler(fname, db.meta)
+        handler = OSMTagHandler(fname, db.meta)
         sax.parse(f, handler)
 
     # defaultdict(<type 'set'>, {u'node': set([u'changeset', u'uid', u'timestamp', u'lon', u'version', u'user', u'lat', u'id']),
