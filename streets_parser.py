@@ -74,9 +74,8 @@ class OSMStreetHandler(sax.ContentHandler):
             self.nodes.append(attrs.getValue('ref'))
 
         if self.current_way and name == 'tag':
-            key = attrs.getValue('k')
-            if key.split(':')[0] in self.interesting_tags:
-                self.tags[key] = attrs.getValue('v')
+            key = attrs.getValue('k').replace('.', '')
+            self.tags[key] = attrs.getValue('v')
 
     def endElement(self, name):
         if name == 'way':

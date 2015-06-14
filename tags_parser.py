@@ -79,21 +79,5 @@ if __name__ == '__main__':
         handler = OSMTagHandler(fname, db.meta)
         sax.parse(f, handler)
 
-    # defaultdict(<type 'set'>, {u'node': set([u'changeset', u'uid', u'timestamp', u'lon', u'version', u'user', u'lat', u'id']),
-    #                            u'tag': set([u'k', u'v']),
-    #                            u'nd': set([u'ref']),
-    #                            u'way': set([u'changeset', u'uid', u'timestamp', u'version', u'user', u'id'])})
-    # defaultdict(<type 'set'>, {u'node': set([u'tag']), u'way': set([u'tag', u'nd'])})
-
     print handler.attribute_dict
     print handler.subelements
-
-    for doc in db.meta.aggregate([{'$match': {'element': 'way'}},
-                                  {'$sort': {'tag.count': -1}},
-                                  {'$project': {'_id': False,
-                                                'element': True,
-                                                'tagname': '$tag.name',
-                                                'tagcount': '$tag.count',
-                                                'subtags': {'$size': {'$ifNull': ['$tag.subtags', []]}}}},
-                              {'$limit': 10}]):
-        print json.dumps(doc, sort_keys=True, indent=2, separators=(',', ': '), ensure_ascii=False)
