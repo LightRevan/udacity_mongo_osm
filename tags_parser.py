@@ -7,11 +7,11 @@ from dbconnection import *
 
 
 class OSMTagHandler(sax.ContentHandler):
-    def __init__(self, fname, db):
+    def __init__(self, fname, collection):
         sax.ContentHandler.__init__(self)
 
         self.fname = fname
-        self.db = db
+        self.collection = collection
 
         self.attribute_dict = collections.defaultdict(set)
         self.subelements = collections.defaultdict(set)
@@ -22,7 +22,7 @@ class OSMTagHandler(sax.ContentHandler):
     def save_to_db(self, elem, k, v):
         parts = k.split(':')
         query = {'file': self.fname, 'element': elem, 'tag.name': parts[0]}
-        doc = self.db.find_one(query)
+        doc = self.collection.find_one(query)
         is_changed = False
         if not doc:
             doc = {'file': self.fname, 'element': elem, 'tag': {'name': parts[0], 'count': 0, 'examples': [v]}}
@@ -48,7 +48,7 @@ class OSMTagHandler(sax.ContentHandler):
         if len(examples) < 11 and v not in examples:
             examples.append(v)
 
-        res = self.db.replace_one(query, doc, upsert=True)
+        res = self.collection.replace_one(query, doc, upsert=True)
 
     def startElement(self, name, attrs):
         if name not in self.interesting_elements:

@@ -10,34 +10,63 @@ from dbconnection import *
 class OSMStreetHandler(sax.ContentHandler):
     interesting_tags = ['addr', 'cladr', 'name', 'building']
 
-    def __init__(self, fname, db):
+    def __init__(self, fname, collection):
         sax.ContentHandler.__init__(self)
 
         self.fname = fname
-        self.db = db
+        self.collection = collection
 
         self.current_way = {}
         self.nodes = []
         self.tags = {}
+        self.processed_num = 0
 
     def save_to_db(self):
         self.current_way['nodes'] = [DBRef('nodes_raw', id) for id in self.nodes]
         self.current_way['is_closed'] = len(self.nodes) != len(set(self.nodes))
 
         split_tags = [(k.split(':'), v) for k, v in self.tags.items()]
-        for group, rows in itertools.groupby(split_tags, lambda row: row[0][0]):
+        group_func = lambda row: row[0][0]
+        sort_func = lambda row: (row[0][0], len(row[0]))
+        for group, rows in itertools.groupby(sorted(split_tags, key=sort_func), group_func):
+            has_default = False
             for tag, v in rows:
+                if len(tag) == 1:
+                    has_default = True
+                    self.current_way[group] = v
+                    continue
+
+                attr_name = ':'.join(tag[1:])
                 if len(tag) > 2:
                     group_name = group + '_long'
                 else:
-                    group_name = group
+                    group_name = group + '_additional' if has_default else group
 
                 ins_group = self.current_way.get(group_name, {})
-                ins_group[':'.join(tag[1:])] = v
+                ins_group[attr_name] = v
                 self.current_way[group_name] = ins_group
+            # rows_lst = list(rows)
+            # if len(rows_lst) == 1 and len(rows_lst[0][0]) == 1:
+            #     self.current_way[group] = rows_lst[0][1]
+            # else:
+            #     for tag, v in rows_lst:
+            #         attr_name = 'default' if len(tag) == 1 else ':'.join(tag[1:])
+            #         if len(tag) > 2:
+            #             group_name = group + '_long'
+            #         else:
+            #             group_name = group
+            #
+            #         ins_group = self.current_way.get(group_name, {})
+            #         ins_group[attr_name] = v
+            #         self.current_way[group_name] = ins_group
 
-        self.db.streets_raw.replace_one({'_id': self.current_way['_id']}, self.current_way, upsert=True)
+        res = self.collection.insert_one(self.current_way)
+        assert res.inserted_id == self.current_way['_id'], self.current_way['_id']
+        self.processed_num += 1
         self.clear_way()
+
+        if self.processed_num == 1 or self.processed_num % 1000 == 0:
+            print self.processed_num
 
     def clear_way(self):
         self.current_way = {}
@@ -72,7 +101,6 @@ if __name__ == '__main__':
 
     db.streets_raw.delete_many({'file': fname})
 
-    tags = set()
     with open(fname, 'r') as f:
-        handler = OSMStreetHandler(fname, db.meta)
+        handler = OSMStreetHandler(fname, db.streets_raw)
         sax.parse(f, handler)

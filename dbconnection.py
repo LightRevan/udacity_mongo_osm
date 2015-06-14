@@ -6,13 +6,13 @@ import json
 client = pymongo.MongoClient()
 db = client.osm
 
-db.streets_raw.create_index('file')
-db.nodes_raw.create_index('file')
-
-db.meta.create_index('file')
-db.meta.create_index('element')
-db.meta.create_index('tag.name')
-db.meta.create_index('tag.count')
+# db.streets_raw.create_index('file')
+# db.nodes_raw.create_index('file')
+#
+# db.meta.create_index('file')
+# db.meta.create_index('element')
+# db.meta.create_index('tag.name')
+# db.meta.create_index('tag.count')
 
 # test = client.test.test
 # client.drop_database('test')
