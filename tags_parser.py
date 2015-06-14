@@ -2,6 +2,7 @@
 
 import xml.sax as sax
 import collections
+import json
 
 from dbconnection import *
 
@@ -86,4 +87,13 @@ if __name__ == '__main__':
 
     print handler.attribute_dict
     print handler.subelements
-    print db.meta.count()
+
+    for doc in db.meta.aggregate([{'$match': {'element': 'way'}},
+                                  {'$sort': {'tag.count': -1}},
+                                  {'$project': {'_id': False,
+                                                'element': True,
+                                                'tagname': '$tag.name',
+                                                'tagcount': '$tag.count',
+                                                'subtags': {'$size': {'$ifNull': ['$tag.subtags', []]}}}},
+                              {'$limit': 10}]):
+        print json.dumps(doc, sort_keys=True, indent=2, separators=(',', ': '), ensure_ascii=False)

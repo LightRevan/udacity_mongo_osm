@@ -34,31 +34,18 @@ class OSMStreetHandler(sax.ContentHandler):
                 if len(tag) == 1:
                     has_default = True
                     self.current_way[group] = v
-                    continue
-
-                attr_name = ':'.join(tag[1:])
-                if len(tag) > 2:
-                    group_name = group + '_long'
                 else:
-                    group_name = group + '_additional' if has_default else group
+                    attr_name = ':'.join(tag[1:])
+                    if len(tag) > 2:
+                        group_name = group + '_long'
+                    elif has_default:
+                        group_name = group + '_additional'
+                    else:
+                        group_name = group
 
-                ins_group = self.current_way.get(group_name, {})
-                ins_group[attr_name] = v
-                self.current_way[group_name] = ins_group
-            # rows_lst = list(rows)
-            # if len(rows_lst) == 1 and len(rows_lst[0][0]) == 1:
-            #     self.current_way[group] = rows_lst[0][1]
-            # else:
-            #     for tag, v in rows_lst:
-            #         attr_name = 'default' if len(tag) == 1 else ':'.join(tag[1:])
-            #         if len(tag) > 2:
-            #             group_name = group + '_long'
-            #         else:
-            #             group_name = group
-            #
-            #         ins_group = self.current_way.get(group_name, {})
-            #         ins_group[attr_name] = v
-            #         self.current_way[group_name] = ins_group
+                    ins_group = self.current_way.get(group_name, {})
+                    ins_group[attr_name] = v
+                    self.current_way[group_name] = ins_group
 
         res = self.collection.insert_one(self.current_way)
         assert res.inserted_id == self.current_way['_id'], self.current_way['_id']
